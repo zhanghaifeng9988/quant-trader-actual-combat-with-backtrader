@@ -11,11 +11,10 @@
 ```
 quant-trader-actual-combat-with-backtrader/
 ├── data/                          # 数据模块
-│   ├── fetcher.py                 # 行情数据获取（tickflow）
-│   ├── storage.py                 # 数据存储（CSV）
-│   ├── updater.py                 # 每日增量更新
-│   └── universe.py                # 股票池筛选（流动性/市值/ST过滤）
-├── factors/                       # 因子模块
+│   ├── fetcher.py                 # 行情数据获取（tickflow API）
+│   ├── quality.py                 # 数据质量检查与清洗（空值填充、停牌检测）
+│   └── universe.py                # 股票池筛选（ST/市值/成交金额/上市日期过滤）
+├── factors/                       # 因子模块（待开发）
 │   ├── base.py                    # 因子基类（标准化、排名、合成）
 │   ├── momentum.py                # 动量因子（N日涨幅）
 │   ├── volatility.py              # 波动率因子（历史波动率）
@@ -38,19 +37,24 @@ quant-trader-actual-combat-with-backtrader/
 │   ├── 02_factor_analysis.ipynb   # 因子有效性分析（IC/分组收益）
 │   ├── 03_strategy_report.ipynb   # 策略回测报告
 │   └── 04_comparison.ipynb        # 多策略横向对比
-├── config.py                      # 全局配置（数据路径、回测参数）
+├── datasets/                      # 数据文件（CSV，107只股票日线行情）
+├── docs/                          # 工作日志与文档
+├── download_data.py               # 批量下载脚本（分批防限流）
+├── config.py                      # 全局配置（数据路径、回测参数、筛选阈值）
 ├── .env                           # 敏感信息（API_KEY，不提交到Git）
-├── requirements.txt               # 依赖清单
+├── environment.yml                # conda 环境配置
 └── README.md                      # 本文件
 ```
 
 ## 实施计划
 
-### Phase 1：数据基础（第 1 周）
-- [x] 项目初始化
-- [ ] 数据获取模块：tickflow 拉取 A 股日线行情
-- [ ] 数据存储：CSV 格式，便于查看和调试
-- [ ] 股票池筛选：流动性、市值、ST 过滤
+### Phase 1：数据基础 ✅
+- [x] 项目初始化（conda 环境、config.py、.env）
+- [x] 数据获取模块：tickflow 拉取 A 股日线行情（108只股票，2021-01-01 ~ 2026-06-18）
+- [x] 数据存储：CSV 格式，便于查看和调试
+- [x] 股票池筛选：5层过滤（ST → 上市日期 → 市值 → 成交金额 → 数据质量）
+- [x] 数据质量检查：空值填充、停牌检测、待人工确认标记
+- [x] 批量下载脚本：分批执行（每批40只）+ 限速窗口重置，避免 API 限流
 
 ### Phase 2：因子体系（第 2 周）
 - [ ] 因子基类：标准化、去极值、排名打分
@@ -87,9 +91,25 @@ quant-trader-actual-combat-with-backtrader/
 - **财务数据**：tickflow（PE、PB、ROE 等）
 - **指数数据**：沪深 300 / 中证 500 成分股
 
-## 运行环境
+## 环境搭建
+
+本项目使用 conda 管理环境，只需两步：
 
 ```bash
-conda create -n quant-combat python=3.11
-conda activate quant-combat
-pip install -r requirements.txt
+# 1. 创建环境（会自动安装所有依赖）
+conda env create -f environment.yml
+
+# 2. 激活环境
+conda activate quant-trader
+```
+
+> 注意：首次运行前，请在项目根目录创建 `.env` 文件，写入你的 tickflow API 密钥：
+> ```
+> API_KEY=你的tickflow密钥
+> ```
+
+## 工作日志
+
+| 日期 | 主题 | 文档 |
+|------|------|------|
+| 2026-06-04 | Day 1：数据管道搭建 | [docs/day01_data_pipeline.md](docs/day01_data_pipeline.md) |
